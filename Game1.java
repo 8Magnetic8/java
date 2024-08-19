@@ -10,28 +10,44 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
-public class Game1 extends javax.swing.JFrame implements KeyListener {
+public class Game1 extends javax.swing.JFrame implements KeyListener, Runnable {
 
     Image image;
     Clip clip;
     int x = 10;
     int y = 640;
     int x2, y2;
+//    int x3,y3;
+//    int x4,y4;
+//    int x5,y5;
     int count = 0;
-
+    Ball[] ball = new Ball[5];
 
     public Game1() {
         initComponents();
         setSize(700, 700);
         setTitle("โมเดลเล่นๆl");
-        image = Toolkit.getDefaultToolkit().createImage("E:\\004\\1.jpg");
+        image = Toolkit.getDefaultToolkit().createImage("D:\\004\\06.jfif");
         this.addKeyListener(this);
+        new Thread(this).start();
         createSound();
+        createBox();
+        for (int i = 0; i < ball.length; i++) {
+            ball[i] = new Ball(getWidth());
+            new Thread(ball[i]).start();
+        }
+//        ball2 = new Ball(getWidth());
+//        ball3 = new Ball(getWidth());
+//        ball4 = new Ball(getWidth());
+//        ball5 = new Ball(getWidth());
     }
+
     public void createBox() {
         Random random = new Random();
         x2 = random.nextInt(getWidth() - 50);
@@ -40,7 +56,7 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
 
     public void createSound() {
         try {
-            File soundFile = new File("E:\\004\\01.wav"); // ไฟล์เสียง
+            File soundFile = new File("D:\\004\\10.wav"); // ไฟล์เสียง
             AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
             clip = AudioSystem.getClip(); // สร้าง Clip
             clip.open(audioIn); // เปิด AudioInputStream กับ Clip
@@ -69,19 +85,31 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
         g.drawImage(image, x, y, 50, 50, this);
         g.setColor(Color.red);
         g.fillRect(x2, y2, 50, 50);
-         Font font=new Font("Angsana new", Font.BOLD, 30);
+        Font font = new Font("Angsana new", Font.BOLD, 30);
         g.setFont(font);
-         g.setColor(Color.BLACK);
-         g.drawString("Score:"+ count ,600, 100);
-         
-         if(count >= 5){
-            g.setColor(Color.GRAY);
+        g.setColor(Color.BLACK);
+        g.drawString("Score:" + count, 600, 100);
+        for (int i = 0; i < ball.length; i++) {
+            ball[i].paint(g);
+        }
+        if (count >= 5) {
+            g.setColor(Color.BLACK);
             g.fillRect(0, 0, super.getWidth(), super.getHeight());
             g.setColor(Color.RED);
             g.setFont(new Font("Angsana new", Font.BOLD, 90));
-            g.drawString("THE WINNER",((super.getWidth()-350)/2), (super.getHeight()/2));
+            g.drawString("THE WINNER", ((super.getWidth() - 350) / 2), (super.getHeight() / 2));
         }
     }
+
+    public void checkBall() {
+        for (int i = 0; i<ball.length; i++) {
+            if (ball[i].play == false) {
+                ball[i] = new Ball(getWidth());
+                new Thread(ball[i]).start();
+            }
+        }
+    }
+    
 
     public void checkCollission() {
         Rectangle rPlayer = new Rectangle(x, y, 50, 50);
@@ -111,12 +139,12 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 300, Short.MAX_VALUE)
         );
 
         pack();
@@ -214,4 +242,17 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+    @Override
+    public void run() {
+         while(true){
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Ball.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            checkBall();
+            repaint();
+        }
+        }
 }
+
