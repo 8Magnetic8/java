@@ -1,7 +1,7 @@
-
 package com.mycompany.samplegame;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -10,57 +10,155 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
-public class Game1 extends javax.swing.JFrame implements KeyListener {
- Image image;
- Clip clip;
-  int x = 10;
-  int y = 640;
-  int x2,y2;
+public class Game1 extends javax.swing.JFrame implements KeyListener, Runnable {
+
+    Image image;
+    Clip clip;
+    int x = 10;
+    int y = 640;
+    int x2, y2;
+//    int x3,y3;
+//    int x4,y4;
+//    int x5,y5;
+    int count = 0;
+    Ball[] ball = new Ball[5];
+    item Item;
+    Bullet[] bullet = new Bullet[10];
+    int bullet01;
     public Game1() {
         initComponents();
-        setSize(700,700);
+        setSize(700, 700);
         setTitle("โมเดลเล่นๆl");
-         image=Toolkit.getDefaultToolkit().createImage("D:\\004\\01.jfif");
-         this.addKeyListener(this);
+        image = Toolkit.getDefaultToolkit().createImage("D:\\004\\06.jfif");
+        this.addKeyListener(this);
+        new Thread(this).start();
         createSound();
+        createBox();
+        for (int i = 0; i < ball.length; i++) {
+            ball[i] = new Ball(getWidth());
+            new Thread(ball[i]).start();
+        }
+        Item = new item(getWidth());
+        new Thread(Item).start();
+
     }
-    public void createBox(){
+
+    public void createBox() {
         Random random = new Random();
-         x2=random.nextInt(getWidth()-50);
-         y2=random.nextInt(getHeight()-50);
+        x2 = random.nextInt(getWidth() - 50);
+        y2 = random.nextInt(getHeight() - 50);
     }
-    public void createSound(){
-           try{
-                File soundFile = new File("D:\\004\\01.wav");
-                AudioInputStream adioIn=AudioSystem.getAudioInputStream(soundFile);
-                 clip=AudioSystem.getClip();
-                 clip=open(adioIn);
-           }catch(Exception ex) {}
-       }
-      public void paint(Graphics g){
-          super.setSize(700, 700);
-          
+
+    public void createSound() {
+        try {
+            File soundFile = new File("D:\\004\\10.wav"); // ไฟล์เสียง
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+            clip = AudioSystem.getClip(); // สร้าง Clip
+            clip.open(audioIn); // เปิด AudioInputStream กับ Clip
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void createBullet() {
+        for (int i = 0; i < bullet.length; i++) {
+            if (bullet[i] == null) {
+                bullet[i] = new Bullet(getWidth(), x + (45 / 2));
+                new Thread(bullet[i]).start();
+                bullet01 = i;
+                break;
+            }
+        }
+        //    public void checkCollision(){
+        //    Rectangle rPlayer = new Rectangle(x, y, 50, 50);
+        //    Rectangle rBox = new Rectangle(x2, y2, 50, 50);
+        //    if(rPlayer.intersects(rBox)){
+        //        System.out.println("Collision");
+        //        createBox();
+        //        if (clip != null) {
+        //            clip.setFramePosition(0); // เริ่มเล่นเสียงจากตำแหน่งเริ่มต้น
+        //            clip.start(); // เล่นเสียง
+        //        }
+        //    }
+        //}
+    }
+
+    public void paint(Graphics g) {
+        super.setSize(700, 700);
+
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, getWidth(), getHeight());
-        g.drawImage(image,x,y,50,50,this);
+        g.drawImage(image, x, y, 50, 50, this);
         g.setColor(Color.red);
         g.fillRect(x2, y2, 50, 50);
-    
+        Font font = new Font("Angsana new", Font.BOLD, 30);
+        g.setFont(font);
+        g.setColor(Color.BLACK);
+        g.drawString("Score:" + count, 600, 100);
+        for (int i = 0; i < ball.length; i++) {
+            ball[i].paint(g);
+            Item.paint(g);
+        }
+        for (int i = 0; i < bullet.length; i++) {
+            if (bullet[i] != null) {
+                bullet[i].paint(g);
+            }
+        }
+        if (count >= 5) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, super.getWidth(), super.getHeight());
+            g.setColor(Color.RED);
+            g.setFont(new Font("Angsana new", Font.BOLD, 90));
+            g.drawString("THE WINNER", ((super.getWidth() - 350) / 2), (super.getHeight() / 2));
+        }
     }
-      public void checkCollission(){
-          Rectangle rPlayer = new Rectangle(x,y,50,50);
-          Rectangle rBox = new Rectangle(x2,y2,50,50);
-          if(rPlayer.intersects(rBox)){          
-          System.out.println("Collission");
-          createBox();
-          clip.loop(1);
-          }
-      }
-       
+
+    public void checkBall() {
+        Rectangle rBall = new Rectangle(x2, y2, 50, 50);
+        for (int i = 0; i < ball.length; i++) {
+            if (ball[i].play == false) {
+                ball[i] = new Ball(getWidth());
+                new Thread(ball[i]).start();
+            }
+        }
+    }
+
+    public void checkCollission() {
+        for (int i = 0; i < ball.length; i++) {
+
+            if (ball[i] == null) {
+                continue;
+            }
+            Rectangle rPlayer = new Rectangle(x, y, 50, 50);
+            Rectangle rBall = new Rectangle(ball[i].x, ball[i].y, 50, 50);
+            if (rPlayer.intersects(rBall)) {
+                System.out.println("Collission");
+                createBox();
+                if (clip != null) {
+                    clip.setFramePosition(0); // เริ่มเล่นเสียงจากตำแหน่งเริ่มต้น
+                    clip.start(); // เล่นเสียง
+                    if (rPlayer.intersects(rBall)) {
+                        //System.out.println(count);
+                        clip.loop(0);
+                        count++;
+                        repaint();
+                    }
+                }
+            }
+           if (bullet[bullet01] != null) {
+                 Rectangle rBullet = new Rectangle(bullet[bullet01].x, bullet[bullet01].y, 10, 30);
+                 if (rBullet.intersects(rBall)) {
+                     System.out.println("ยิงโดน");
+                 }
+        }
+    }
+    }
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -70,12 +168,12 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 300, Short.MAX_VALUE)
         );
 
         pack();
@@ -118,52 +216,53 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) {
-       
+
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
 //         
         //System.out.println(ke.getKeyCode());
-        switch(e.getKeyCode()){
+        switch (e.getKeyCode()) {
             case 39:
-            if(x < 700)
-            {
-                x=x+10; // เปลี่ยน x ทีละ 10
-                repaint();
-            }
-            break;
-        
-        case 37:
-            if(x > 10)
-            {
-                x=x-10; // เปลี่ยน x ทีละ 10
-                repaint();
-            }
-       break;
-        
-         case 38:
-            if(y > 30)
-            {
-                y=y-10; // เปลี่ยน y ทีละ 10
-                repaint();
-            }
-            break;
-        
+                if (x < 700) {
+                    x = x + 10; // เปลี่ยน x ทีละ 10
+                    repaint();
+                }
+                break;
+
+            case 37:
+                if (x > 10) {
+                    x = x - 10; // เปลี่ยน x ทีละ 10
+                    repaint();
+                }
+                break;
+
+            case 38:
+                if (y > 30) {
+                    y = y - 10; // เปลี่ยน y ทีละ 10
+                    repaint();
+                }
+                break;
+
             case 40:
-            if(y < 700)
-            {
-                y=y+10; // เปลี่ยน y ทีละ 10
-                repaint();
+                if (y < 700) {
+                    y = y + 10; // เปลี่ยน y ทีละ 10
+                    repaint();
+                }
+                break;
+            case 32: {
+                createBullet();
+                break;
             }
-            break;
         }
-        
+        checkBall();
         checkCollission();
     }
+
     @Override
     public void keyReleased(KeyEvent e) {
-        
+
     }
 
     private Clip open(AudioInputStrem adioIn) {
@@ -176,4 +275,16 @@ public class Game1 extends javax.swing.JFrame implements KeyListener {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Ball.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            checkBall();
+            repaint();
+        }
+    }
 }
